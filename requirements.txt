@@ -1,4 +1,4 @@
 Flask==2.1.2
 opencv-python==4.5.5.64
 pyserial==3.5
-edge_impulse_linux==1.0.15
+edge_impulse_linux==1.0.9

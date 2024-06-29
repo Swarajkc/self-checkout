@@ -1,22 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self-Checkout System</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <title>Object Detection Viewer</title>
 </head>
 <body>
-    <h1>Self-Checkout System</h1>
+    <h1>Checkout System</h1>
+    <img src="{{ url_for('video_feed') }}" alt="Object Detection Stream">
     <div>
-        <img src="/video_feed" alt="Video Feed" style="width:300px; height:300px;">
+        <h2>Object: {{ object }}</h2>
+        <h2>Weight: {{ weight }}</h2>
+        <h2>Price: {{ price }}</h2>
     </div>
-    <button onclick="startDetection()">Start Detection</button>
-    <div id="details">
-        <p><strong>Object:</strong> <span id="object">None</span></p>
-        <p><strong>Weight:</strong> <span id="weight">0 grams</span></p>
-        <p><strong>Price:</strong> <span id="price">0 Rs</span></p>
-    </div>
-    <script src="/static/js/scripts.js"></script>
+    <script>
+        setInterval(function(){
+            fetch('/get_details')
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector('h2:nth-child(1)').innerText = "Object: " + data.object;
+                document.querySelector('h2:nth-child(2)').innerText = "Weight: " + data.weight;
+                document.querySelector('h2:nth-child(3)').innerText = "Price: " + data.price;
+            });
+        }, 1000); // Update the content every second
+    </script>
 </body>
 </html>

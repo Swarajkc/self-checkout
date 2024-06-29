@@ -1,7 +1,7 @@
 Flask>=2.1.2
 Werkzeug==3.0.3
 opencv-python==4.5.5.64
-numpy==1.21.2  # Pin to a stable version compatible with other libraries
+numpy==2.0.0
 pyserial==3.5
 edge_impulse_linux==1.0.9
 psutil>=5.8.0

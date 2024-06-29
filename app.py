@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, Response
-from picamera2 import Picamera2, Preview
+from picamera2 import Picamera2, PicameraM2MEncoder
 from edge_impulse_linux.image import ImageImpulseRunner
 import serial
 import threading
@@ -13,12 +13,6 @@ latest_weight = "Waiting for data..."
 latest_object = None
 frame = None
 
-# Initialize the camera
-picam2 = Picamera2()
-config = picam2.create_preview_configuration(main={"size": (300, 300)})
-picam2.configure(config)
-picam2.start()
-
 def read_from_arduino():
     global latest_weight
     ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust to the correct Arduino serial port
@@ -30,21 +24,24 @@ def read_from_arduino():
 def object_detection():
     global latest_object, frame
     model_path = '/home/pi/modelfile.eim'  # Path to the Edge Impulse model
-    runner = ImageImpulseRunner(model_path)
-    runner.init()
-
-    while True:
-        frame = picam2.capture_array()
-        if frame is None:
-            continue
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        features, error = runner.get_features_from_image(frame_rgb)
-        if not np.any(error):  # Check if no error
-            results = runner.classify(features)
-            if "bounding_boxes" in results['result']:
-                for bbox in results['result']['bounding_boxes']:
-                    latest_object = bbox['label']
-                    break  # Exit after first detected object
+    with ImageImpulseRunner(model_path) as runner:
+        runner.init()
+        picam2 = Picamera2()
+        config = picam2.create_video_configuration(main={"size": (300, 300)})
+        picam2.configure(config)
+        picam2.start()
+        while True:
+            frame = picam2.capture_array()
+            if frame is None:
+                continue
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            features, error = runner.get_features_from_image(frame_rgb)
+            if not np.any(error):  # Check if no error
+                results = runner.classify(features)
+                if "bounding_boxes" in results['result']:
+                    for bbox in results['result']['bounding_boxes']:
+                        latest_object = bbox['label']
+                        break  # Exit after first detected object
 
 def generate_frame():
     global frame
@@ -71,8 +68,8 @@ def start_detection():
 
 @app.route('/get_details')
 def get_details():
-    price_per_gram = {"Lays": 1.4, "Coke": 0.5}
-    weight_str = latest_weight.split()[-1]
+    price_per_gram = {"lays": 1.4, "coke": 0.5}
+    weight_str = latest_weight.split()[-2]
     try:
         weight = float(weight_str)
         price = weight * price_per_gram.get(latest_object.lower(), 0)

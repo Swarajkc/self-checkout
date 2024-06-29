@@ -1,0 +1,10 @@
+Flask==2.0.3
+Flask-SQLAlchemy==2.5.1
+opencv-python-headless==4.5.5.62
+picamera2
+edge_impulse_linux==1.0.15
+requests==2.27.1
+gunicorn==20.1.0  # If you are using Gunicorn as your WSGI HTTP Server
+Pillow==8.3.2  # If you need to manipulate images
+numpy==1.21.2  # Dependency for OpenCV and possibly used elsewhere
+SQLAlchemy==1.4.27

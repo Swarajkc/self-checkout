@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, Response
-from picamera2 import Picamera2, PicameraM2MEncoder
+from picamera2 import Picamera2
 from edge_impulse_linux.image import ImageImpulseRunner
 import serial
 import threading
@@ -41,6 +41,9 @@ def object_detection():
                 if "bounding_boxes" in results['result']:
                     for bbox in results['result']['bounding_boxes']:
                         latest_object = bbox['label']
+                        x, y, w, h = bbox['x'], bbox['y'], bbox['width'], bbox['height']
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                        cv2.putText(frame, f"{bbox['label']}: {bbox['value']:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         break  # Exit after first detected object
 
 def generate_frame():
@@ -69,7 +72,7 @@ def start_detection():
 @app.route('/get_details')
 def get_details():
     price_per_gram = {"lays": 1.4, "coke": 0.5}
-    weight_str = latest_weight.split()[-2]
+    weight_str = latest_weight.split()[-1]
     try:
         weight = float(weight_str)
         price = weight * price_per_gram.get(latest_object.lower(), 0)
@@ -77,7 +80,7 @@ def get_details():
         weight = 0
         price = 0
     return jsonify({
-        "object": latest_object,
+        "object": latest_object if latest_object else "Not detected",
         "weight": latest_weight,
         "price": f"{price:.2f} Rs"
     }), 200

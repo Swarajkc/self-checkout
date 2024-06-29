@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, render_template
 import serial
-import cv2
+from picamera2 import Picamera2
+from picamera2.encoders import H264Encoder
 from edge_impulse_linux.image import ImageImpulseRunner
 import threading
+import numpy as np
 
 app = Flask(__name__)
 
@@ -23,16 +25,14 @@ def object_detection():
     model_path = '/home/pi/modelfile.eim'  # Path to the Edge Impulse model
     with ImageImpulseRunner(model_path) as runner:
         runner.init()
-        cap = cv2.VideoCapture(0)  # Open the default camera
-        if not cap.isOpened():
-            print("Cannot open camera")
-            return
+        picam2 = Picamera2()
+        config = picam2.create_video_configuration(main={"size": (640, 480)})
+        picam2.configure(config)
+        picam2.start()
+        
         try:
             while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("Can't receive frame (stream end?). Exiting ...")
-                    break
+                frame = picam2.capture_array()
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 features, error = runner.get_features_from_image(frame_rgb)
                 if not error:
@@ -42,7 +42,7 @@ def object_detection():
                             latest_object = bbox['label']
                             break  # exit after first detected object
         finally:
-            cap.release()  # Release the camera when done
+            picam2.stop()  # Stop the camera when done
 
 def initialize_threads():
     threading.Thread(target=read_from_arduino, daemon=True).start()

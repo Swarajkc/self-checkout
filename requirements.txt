@@ -1,11 +1,10 @@
 Flask==2.2.2
-Werkzeug==0.16.1
+Werkzeug>=2.2.2
 Jinja2>=3.0
 itsdangerous>=2.0
 click>=8.0
 Flask-SQLAlchemy==2.5.1
-edge_impulse_linux==1.0.9
-opencv-python-headless==4.5.5.62  # Consider updating to a non-yanked, supported version if available
+opencv-python-headless==4.5.5.62  # If possible, use a newer version that hasn't been yanked
 requests==2.28.1
 numpy==1.24.2
 Pillow==9.4.0

@@ -1,7 +1,5 @@
-# edge_detection.py
 import serial
 import cv2
-from picamera2 import Picamera2
 from edge_impulse_linux.image import ImageImpulseRunner
 import threading
 
@@ -22,22 +20,28 @@ def object_detection():
     model_path = '/home/pi/modelfile.eim'  # Path to the Edge Impulse model
     with ImageImpulseRunner(model_path) as runner:
         runner.init()
-        picam2 = Picamera2()
-        picam2.configure(picam2.create_video_configuration(main={"size": (300, 300)}))
-        picam2.start()
+        cap = cv2.VideoCapture(0)  # Open the default camera
+        if not cap.isOpened():
+            print("Cannot open camera")
+            return
 
-        while True:
-            frame = picam2.capture_array()
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            features, error = runner.get_features_from_image(frame_rgb)
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    print("Can't receive frame (stream end?). Exiting ...")
+                    break
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                features, error = runner.get_features_from_image(frame_rgb)
 
-            if not error:
-                results = runner.classify(features)
-                if "bounding_boxes" in results['result']:
-                    for bbox in results['result']['bounding_boxes']:
-                        latest_object = bbox['label']
-                        # Assuming only one object type is detected at a time for simplicity
-                        break  # exit after first detected object
+                if not error:
+                    results = runner.classify(features)
+                    if "bounding_boxes" in results['result']:
+                        for bbox in results['result']['bounding_boxes']:
+                            latest_object = bbox['label']
+                            break  # exit after first detected object
+        finally:
+            cap.release()  # Release the camera when done
 
 def initialize_threads():
     threading.Thread(target=read_from_arduino, daemon=True).start()

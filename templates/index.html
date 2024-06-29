@@ -1,23 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Items</title>
-  </head>
-  <body>
-    <h1>Recorded Items</h1>
-    <ul>
-      {% for item in items %}
-      <li>
-        {{ item.name }} - {{ item.weight }}g - ${{ item.price }}
-        <img
-          src="{{ item.image_url }}"
-          alt="{{ item.name }}"
-          style="width: 100px"
-        />
-      </li>
-      {% endfor %}
-    </ul>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <title>Item Detection and Pricing</title>
+</head>
+<body>
+    <button onclick="startDetection()">Start Detection</button>
+    <div id="details">Waiting for detection...</div>
+    <script src="/static/script.js"></script>
+</body>
 </html>

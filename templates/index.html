@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Item Detection and Pricing</title>
+    <title>Checkout System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
+    <h1>Checkout System</h1>
     <button onclick="startDetection()">Start Detection</button>
-    <div id="details">Waiting for detection...</div>
-    <script src="/static/script.js"></script>
+    <div id="info">
+        <img id="objectImage" src="" alt="Object Image" width="200">
+        <p id="objectName"></p>
+        <p id="objectWeight"></p>
+        <p id="objectPrice"></p>
+    </div>
+    <script src="/static/js/scripts.js"></script>
 </body>
 </html>

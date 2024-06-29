@@ -1,16 +1,23 @@
-from flask import Flask, jsonify, render_template
-import serial
-from picamera2 import Picamera2
-from picamera2.encoders import H264Encoder
+from flask import Flask, jsonify, render_template, Response
+from picamera2 import Picamera2, Preview
 from edge_impulse_linux.image import ImageImpulseRunner
+import serial
 import threading
+import cv2
 import numpy as np
 
 app = Flask(__name__)
 
-# Global variable to store the latest weight reading and detected object
+# Global variables to store the latest weight reading and detected object
 latest_weight = "Waiting for data..."
 latest_object = None
+frame = None
+
+# Initialize the camera
+picam2 = Picamera2()
+config = picam2.create_preview_configuration(main={"size": (300, 300)})
+picam2.configure(config)
+picam2.start()
 
 def read_from_arduino():
     global latest_weight
@@ -21,50 +28,57 @@ def read_from_arduino():
             latest_weight = f"Weight: {data} grams"
 
 def object_detection():
-    global latest_object
+    global latest_object, frame
     model_path = '/home/pi/modelfile.eim'  # Path to the Edge Impulse model
-    with ImageImpulseRunner(model_path) as runner:
-        runner.init()
-        picam2 = Picamera2()
-        config = picam2.create_video_configuration(main={"size": (640, 480)})
-        picam2.configure(config)
-        picam2.start()
-        
-        try:
-            while True:
-                frame = picam2.capture_array()
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                features, error = runner.get_features_from_image(frame_rgb)
-                if not error:
-                    results = runner.classify(features)
-                    if "bounding_boxes" in results['result']:
-                        for bbox in results['result']['bounding_boxes']:
-                            latest_object = bbox['label']
-                            break  # exit after first detected object
-        finally:
-            picam2.stop()  # Stop the camera when done
+    runner = ImageImpulseRunner(model_path)
+    runner.init()
 
-def initialize_threads():
-    threading.Thread(target=read_from_arduino, daemon=True).start()
-    threading.Thread(target=object_detection, daemon=True).start()
+    while True:
+        frame = picam2.capture_array()
+        if frame is None:
+            continue
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        features, error = runner.get_features_from_image(frame_rgb)
+        if not np.any(error):  # Check if no error
+            results = runner.classify(features)
+            if "bounding_boxes" in results['result']:
+                for bbox in results['result']['bounding_boxes']:
+                    latest_object = bbox['label']
+                    break  # Exit after first detected object
+
+def generate_frame():
+    global frame
+    while True:
+        if frame is not None:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 @app.route('/start_detection')
 def start_detection():
-    initialize_threads()
+    threading.Thread(target=read_from_arduino, daemon=True).start()
+    threading.Thread(target=object_detection, daemon=True).start()
     return jsonify({"status": "Detection started"}), 200
 
 @app.route('/get_details')
 def get_details():
-    price_per_gram = {
-        "lays": 1.4,
-        "coke": 0.5
-    }
-    weight = float(latest_weight.split()[-1])
-    price = weight * price_per_gram.get(latest_object.lower(), 0)
+    price_per_gram = {"Lays": 1.4, "Coke": 0.5}
+    weight_str = latest_weight.split()[-1]
+    try:
+        weight = float(weight_str)
+        price = weight * price_per_gram.get(latest_object.lower(), 0)
+    except ValueError:
+        weight = 0
+        price = 0
     return jsonify({
         "object": latest_object,
         "weight": latest_weight,

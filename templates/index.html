@@ -1,26 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Object Detection Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <h1>Checkout System</h1>
-    <img src="{{ url_for('video_feed') }}" alt="Object Detection Stream">
-    <div>
-        <h2>Object: {{ object }}</h2>
-        <h2>Weight: {{ weight }}</h2>
-        <h2>Price: {{ price }}</h2>
-    </div>
-    <script>
-        setInterval(function(){
-            fetch('/get_details')
-            .then(response => response.json())
-            .then(data => {
-                document.querySelector('h2:nth-child(1)').innerText = "Object: " + data.object;
-                document.querySelector('h2:nth-child(2)').innerText = "Weight: " + data.weight;
-                document.querySelector('h2:nth-child(3)').innerText = "Price: " + data.price;
-            });
-        }, 1000); // Update the content every second
-    </script>
+    <button onclick="startDetection()">Start Detection</button>
+    <h2>Object Detection Stream</h2>
+    <img src="/video_feed" alt="Object Detection Stream" style="max-width: 100%; height: auto;">
+    <h3>Details:</h3>
+    <p>Object: <span id="object">Not detected</span></p>
+    <p>Weight: <span id="weight">Waiting for data...</span></p>
+    <p>Price: <span id="price">0.00 Rs</span></p>
+    <script src="/static/js/scripts.js"></script>
 </body>
 </html>

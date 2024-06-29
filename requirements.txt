@@ -2,3 +2,6 @@ Flask==2.1.2
 opencv-python==4.5.5.64
 pyserial==3.5
 edge_impulse_linux==1.0.9
+numpy>=1.21.2  # numpy may be a dependency for other packages like OpenCV
+psutil>=5.8.0  # Required by edge_impulse_linux
+gunicorn==20.1.0  # Add this line

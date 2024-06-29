@@ -1,16 +1,19 @@
 function startDetection() {
-    fetch('/start_detection').then(response => response.json()).then(data => {
-        console.log("Detection started");
-    });
+    fetch('/start_detection')
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error('Error:', error));
 
-    setInterval(() => {
-        fetch('/get_details')
+    setInterval(fetchDetails, 1000);  // Fetch details every second
+}
+
+function fetchDetails() {
+    fetch('/get_details')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('objectName').textContent = 'Object: ' + data.object;
-            document.getElementById('objectWeight').textContent = 'Weight: ' + data.weight;
-            document.getElementById('objectPrice').textContent = 'Price: ' + data.price;
-            document.getElementById('objectImage').src = '/static/images/' + data.object.toLowerCase() + '.jpg';
-        });
-    }, 5000);  // Update the UI every 5 seconds
+            document.getElementById('object').textContent = data.object || 'None';
+            document.getElementById('weight').textContent = data.weight || '0 grams';
+            document.getElementById('price').textContent = data.price + ' Rs';
+        })
+        .catch(error => console.error('Error:', error));
 }

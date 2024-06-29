@@ -2,19 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout System</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #video {
+            border: 1px solid black;
+            width: 640px;
+            height: 480px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Checkout System</h1>
-    <button onclick="startDetection()">Start Detection</button>
-    <h2>Object Detection Stream</h2>
-    <img src="/video_feed" alt="Object Detection Stream" style="max-width: 100%; height: auto;">
-    <h3>Details:</h3>
+    <h1>Object Detection Stream</h1>
+    <img id="video" src="{{ url_for('video_feed') }}">
+    <h2>Details:</h2>
     <p>Object: <span id="object">Not detected</span></p>
     <p>Weight: <span id="weight">Waiting for data...</span></p>
     <p>Price: <span id="price">0.00 Rs</span></p>
-    <script src="/static/js/scripts.js"></script>
+
+    <script>
+        function fetchData() {
+            fetch('/get_details')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('object').textContent = data.object;
+                    document.getElementById('weight').textContent = data.weight;
+                    document.getElementById('price').textContent = data.price;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        setInterval(fetchData, 1000);
+
+        fetch('/start_detection')
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    </script>
 </body>
 </html>

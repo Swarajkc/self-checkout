@@ -4,7 +4,7 @@ import cv2
 import time
 import signal
 import serial
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from edge_impulse_linux.image import ImageImpulseRunner
 from picamera2 import Picamera2
 
@@ -18,19 +18,19 @@ products = {}
 model_path = '/home/pi/modelfile.eim'  # Path to your Edge Impulse model
 
 def read_from_arduino():
-    if ser.in_waiting > 0:
-        data = ser.readline().decode().strip()
-        print(f"Raw Data from Arduino: {data}")
-        try:
-            weight = float(data)
-            if weight < 0:
-                print("Received invalid weight, ignoring...")
-                return 0
-            return weight
-        except ValueError:
-            print("Error converting weight data to float. Data received:", data)
-            return 0
-    return 0
+    weights = []
+    start_time = time.time()
+    while time.time() - start_time < 10:  # Read for 10 seconds
+        if ser.in_waiting > 0:
+            data = ser.readline().decode().strip()
+            print(f"Raw Data from Arduino: {data}")
+            try:
+                weight = float(data)
+                if weight > 0:
+                    weights.append(weight)
+            except ValueError:
+                print("Error converting weight data to float. Data received:", data)
+    return sum(weights) / len(weights) if weights else 0
 
 @app.route('/')
 def index():
@@ -43,6 +43,11 @@ def detect():
     if item_detected:
         products[item_detected] = {"weight": weight, "confidence": confidence}
     return jsonify(item=item_detected, weight=weight, confidence=confidence)
+
+@app.route('/total', methods=['POST'])
+def total():
+    total_price = sum(details['weight'] * 0.05 for details in products.values())  # Example price calculation
+    return jsonify(total=total_price)
 
 def object_detection():
     with ImageImpulseRunner(model_path) as runner:
@@ -77,4 +82,3 @@ def object_detection():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)  # Run the Flask app
-

@@ -2,45 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Checkout System</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        #video {
-            border: 1px solid black;
-            width: 640px;
-            height: 480px;
-        }
-    </style>
+    <meta viewport="width=device-width, initial-scale=1.0">
+    <title>Self Checkout System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <h1>Object Detection Stream</h1>
-    <img id="video" src="{{ url_for('video_feed') }}">
-    <h2>Details:</h2>
-    <p>Object: <span id="object">Not detected</span></p>
-    <p>Weight: <span id="weight">Waiting for data...</span></p>
-    <p>Price: <span id="price">0.00 Rs</span></p>
+    <div id="product-list">
+        <h1>Detected Products</h1>
+        <ul>
+            {% for product, details in products.items() %}
+            <li>{{ product }} - ${{ details.price }} - Weight: {{ details.weight }}kg</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <button onclick="detectProduct()">Detect Product</button>
+    <div id="detection-result"></div>
 
     <script>
-        function fetchData() {
-            fetch('/get_details')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('object').textContent = data.object;
-                    document.getElementById('weight').textContent = data.weight;
-                    document.getElementById('price').textContent = data.price;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        setInterval(fetchData, 1000);
-
-        fetch('/start_detection')
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error('Error:', error));
+    function detectProduct() {
+        $.post('/detect', function(data) {
+            if(data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                $('#detection-result').html('<p>Detected: ' + data.item + ' - Price: $' + data.price + ' - Weight: ' + data.weight + 'kg</p>');
+            }
+        });
+    }
     </script>
 </body>
 </html>

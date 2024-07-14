@@ -1,28 +1,16 @@
-#!/usr/bin/env python3
-
+from flask import Flask, render_template, request, jsonify, Response
 import cv2
 import serial
 import time
-import threading
-import io
-from flask import Flask, render_template, request, jsonify, Response
 from picamera2 import Picamera2
 from edge_impulse_linux.image import ImageImpulseRunner
 
-# Setup the Flask application
 app = Flask(__name__)
-
-# Setup serial communication
-ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust as necessary for your setup
-
-# Setup Edge Impulse
-model_path = '/home/pi/modelfile.eim'  # Update this path as necessary
-
-# Initialize global variables for the camera and runner
-picam2 = Picamera2()
+ser = serial.Serial('/dev/ttyACM0', 57600)
+model_path = '/home/pi/modelfile.eim'
+picam2 = None
 runner = None
 
-# Updated product data
 products = {
     "Apple": {"price": 1.00, "weight": 0},
     "Coke": {"price": 0.80, "weight": 0}
@@ -34,58 +22,54 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    """Video streaming route for object detection preview."""
-    return Response(gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen():
-    """Video streaming generator function."""
     while True:
         frame = get_frame()
         _, jpeg = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
 
-@app.route('/detect', methods=['POST'])
-def detect():
-    frame = get_frame()
-    try:
-        features, _ = runner.get_features_from_image(frame)
-        results = runner.classify(features)
-        item_detected = max(results['result']['classification'], key=lambda x: x['value'])['label']
-        weight = read_weight()
-        response = {
-            'item': item_detected,
-            'price': products[item_detected]['price'],
-            'weight': weight
-        }
-    except Exception as e:
-        response = {'error': str(e)}
-    return jsonify(response)
-
-def read_weight():
-    if ser.in_waiting > 0:
-        line = ser.readline().decode('utf-8').strip()
-        return float(line)
-    return 0.0
-
 def get_frame():
+    global picam2
+    if not picam2:
+        setup_camera()
     frame = picam2.capture_array()
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return frame_rgb
 
 def setup_camera():
-    global runner, picam2
-    runner = ImageImpulseRunner(model_path)
-    runner.init()
-    picam2.configure(picam2.create_video_configuration(main={"size": (300, 300)}))
-    picam2.start()
+    global picam2, runner
+    try:
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_video_configuration(main={"size": (300, 300)}))
+        picam2.start()
+        runner = ImageImpulseRunner(model_path)
+        runner.init()
+    except Exception as e:
+        print("Failed to initialize camera:", str(e))
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
+def shutdown_server():
+    global picam2, runner, ser
+    if picam2:
+        picam2.stop()
+    if runner:
+        runner.stop()  # Adjusting the method to stop the runner
+    if ser:
+        ser.close()
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
 
 if __name__ == '__main__':
-    setup_camera()
     try:
+        setup_camera()
         app.run(debug=True, host='0.0.0.0', port=5000)
     finally:
-        picam2.stop()
-        runner.close()
-        ser.close()
+        shutdown_server()

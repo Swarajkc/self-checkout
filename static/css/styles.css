@@ -2,3 +2,13 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
 }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+#video {
+    background: #000; /* Black background to hide incomplete loading visuals */
+    display: block;
+    margin: auto;
+}

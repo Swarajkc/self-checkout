@@ -35,7 +35,7 @@
 
     function proceedToPay() {
         $.post('/total', function(data) {
-            $('#total-price').html('<p>Total Price: $' + data.total.toFixed(2) + '</p>');
+            $('#total-price').html('<p>Total Price: NRS' + data.total.toFixed(2) + '</p>');
         });
     }
     </script>

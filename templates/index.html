@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta viewport="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Self Checkout System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -10,14 +10,16 @@
 <body>
     <div id="product-list">
         <h1>Detected Products</h1>
-        <ul>
+        <ul id="products">
             {% for product, details in products.items() %}
-            <li>{{ product }} - ${{ details.price }} - Weight: {{ details.weight }}kg</li>
+            <li>{{ product }} - Weight: {{ details.weight }}g - Confidence: {{ details.confidence }}</li>
             {% endfor %}
         </ul>
     </div>
     <button onclick="detectProduct()">Detect Product</button>
+    <button onclick="proceedToPay()">Proceed to Pay</button>
     <div id="detection-result"></div>
+    <div id="total-price"></div>
 
     <script>
     function detectProduct() {
@@ -25,8 +27,15 @@
             if(data.error) {
                 alert('Error: ' + data.error);
             } else {
-                $('#detection-result').html('<p>Detected: ' + data.item + ' - Price: $' + data.price + ' - Weight: ' + data.weight + 'kg</p>');
+                $('#detection-result').html('<p>Detected: ' + data.item + ' - Weight: ' + data.weight + 'g - Confidence: ' + data.confidence + '</p>');
+                $('#products').append('<li>' + data.item + ' - Weight: ' + data.weight + 'g - Confidence: ' + data.confidence + '</li>');
             }
+        });
+    }
+
+    function proceedToPay() {
+        $.post('/total', function(data) {
+            $('#total-price').html('<p>Total Price: $' + data.total.toFixed(2) + '</p>');
         });
     }
     </script>

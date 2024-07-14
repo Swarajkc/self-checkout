@@ -11,3 +11,8 @@ body {
     color: green;
     font-size: 16px;
 }
+#total-price {
+    margin-top: 20px;
+    color: blue;
+    font-size: 18px;
+}

@@ -17,6 +17,10 @@ ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust to your Arduino port
 products = {}
 model_path = '/home/pi/modelfile.eim'  # Path to your Edge Impulse model
 
+# Price definitions
+price_per_gram_Lays = 1.21  # NRS for 1 gram of Lays
+price_per_gram_Coke = 5.88  # NRS for 1 gram of Coke
+
 def read_from_arduino():
     weights = []
     start_time = time.time()
@@ -29,8 +33,8 @@ def read_from_arduino():
                 if weight > 0:
                     weights.append(weight)
             except ValueError:
-                print("Error converting weight data to float. Data received:", data)
-    return sum(weights) / len(weights) if weights else 0
+                print("Error converting weight data to float. Data received:", data)    
+    return weights[-1] if weights else "0"  # Return only the last value as string
 
 @app.route('/')
 def index():
@@ -46,7 +50,10 @@ def detect():
 
 @app.route('/total', methods=['POST'])
 def total():
-    total_price = sum(details['weight'] * 0.05 for details in products.values())  # Example price calculation
+    total_price = sum(
+        details['weight'] * (price_per_gram_Lays if item == 'Lays' else price_per_gram_Coke)
+        for item, details in products.items()
+    )
     return jsonify(total=total_price)
 
 def object_detection():
@@ -82,3 +89,4 @@ def object_detection():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)  # Run the Flask app
+

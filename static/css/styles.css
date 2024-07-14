@@ -1,14 +1,13 @@
 body {
     font-family: Arial, sans-serif;
-    text-align: center;
 }
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+#product-list {
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid #ccc;
 }
-#video {
-    background: #000; /* Black background to hide incomplete loading visuals */
-    display: block;
-    margin: auto;
+#detection-result {
+    margin-top: 20px;
+    color: green;
+    font-size: 16px;
 }

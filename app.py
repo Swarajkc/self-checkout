@@ -1,75 +1,80 @@
-from flask import Flask, render_template, request, jsonify, Response
+#!/usr/bin/env python3
+
 import cv2
-import serial
 import time
-from picamera2 import Picamera2
+import signal
+import serial
+from flask import Flask, render_template, jsonify
 from edge_impulse_linux.image import ImageImpulseRunner
+from picamera2 import Picamera2
 
 app = Flask(__name__)
-ser = serial.Serial('/dev/ttyACM0', 57600)
-model_path = '/home/pi/modelfile.eim'
-picam2 = None
-runner = None
 
-products = {
-    "Apple": {"price": 1.00, "weight": 0},
-    "Coke": {"price": 0.80, "weight": 0}
-}
+# Setup the serial connection for weight reading
+ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust to your Arduino port
+
+# Global variables
+products = {}
+model_path = '/home/pi/modelfile.eim'  # Path to your Edge Impulse model
+
+def read_from_arduino():
+    if ser.in_waiting > 0:
+        data = ser.readline().decode().strip()
+        print(f"Raw Data from Arduino: {data}")
+        try:
+            weight = float(data)
+            if weight < 0:
+                print("Received invalid weight, ignoring...")
+                return 0
+            return weight
+        except ValueError:
+            print("Error converting weight data to float. Data received:", data)
+            return 0
+    return 0
 
 @app.route('/')
 def index():
     return render_template('index.html', products=products)
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/detect', methods=['POST'])
+def detect():
+    weight = read_from_arduino()
+    item_detected, confidence = object_detection()
+    if item_detected:
+        products[item_detected] = {"weight": weight, "confidence": confidence}
+    return jsonify(item=item_detected, weight=weight, confidence=confidence)
 
-def gen():
-    while True:
-        frame = get_frame()
-        _, jpeg = cv2.imencode('.jpg', frame)
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+def object_detection():
+    with ImageImpulseRunner(model_path) as runner:
+        runner.init()
 
-def get_frame():
-    global picam2
-    if not picam2:
-        setup_camera()
-    frame = picam2.capture_array()
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    return frame_rgb
-
-def setup_camera():
-    global picam2, runner
-    try:
         picam2 = Picamera2()
         picam2.configure(picam2.create_video_configuration(main={"size": (300, 300)}))
         picam2.start()
-        runner = ImageImpulseRunner(model_path)
-        runner.init()
-    except Exception as e:
-        print("Failed to initialize camera:", str(e))
 
-@app.route('/shutdown', methods=['POST'])
-def shutdown():
-    shutdown_server()
-    return 'Server shutting down...'
+        frame = picam2.capture_array()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-def shutdown_server():
-    global picam2, runner, ser
-    if picam2:
-        picam2.stop()
-    if runner:
-        runner.stop()  # Adjusting the method to stop the runner
-    if ser:
-        ser.close()
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func:
-        func()
+        features, error = runner.get_features_from_image(frame_rgb)
 
-if __name__ == '__main__':
-    try:
-        setup_camera()
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    finally:
-        shutdown_server()
+        if isinstance(error, (list, tuple, dict)) and error:
+            print("Error getting features:", error)
+            return None, 0
+        elif isinstance(error, str) and len(error) > 0:
+            print("Error getting features:", error)
+            return None, 0
+        else:
+            results = runner.classify(features)
+
+            if "bounding_boxes" in results['result']:
+                for bbox in results['result']['bounding_boxes']:
+                    label = bbox['label']
+                    confidence = bbox['value']
+                    if confidence > 0.4:  # Threshold for detection
+                        print(f"Detected {label} with confidence {confidence:.2f}")
+                        return label, confidence
+    return None, 0
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)  # Run the Flask app
+

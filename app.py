@@ -59,10 +59,11 @@ def continuous_detection():
                     if confidence > 0.4:  # Threshold for detection
                         weight = read_from_arduino()
                         if weight < 5:
-                            continue  # If weight is less than 5 grams, skip this detection
-                        products.append({"label": label, "confidence": confidence, "weight": weight})
+                            continue  # Skip if weight is less than 5 grams
+                        image_path = f"/static/images/{label}.jpg"  # Assuming image filename matches the label
+                        products.append({"label": label, "confidence": confidence, "weight": weight, "image": image_path})
                         print(f"Detected {label} with confidence {confidence:.2f} and weight {weight}")
-            time.sleep(1)  # Wait for a second before the next capture
+            time.sleep(1)  # Delay to simulate processing time
 
 @app.route('/')
 def index():

@@ -41,10 +41,10 @@ function displayProducts(products) {
     const container = $('#detected-products');
     container.empty();
     products.forEach(product => {
-        container.append(`<div>${product.label} - Weight: ${product.weight}g - Confidence: ${product.confidence.toFixed(2)}</div>`);
+        container.append(`<div><img src="${product.image}" alt="${product.label}" style="width:100px; height:auto;"><br>${product.label} - Weight: ${product.weight}g - Confidence: ${product.confidence.toFixed(2)}</div>`);
     });
 }
-
+    
 function updateTotalPrice(products) {
     let totalPrice = 0;
     products.forEach(product => {

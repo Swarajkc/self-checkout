@@ -3,41 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self Checkout System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Self-Checkout System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div id="product-list">
-        <h1>Detected Products</h1>
-        <ul id="products">
-            {% for product, details in products.items() %}
-            <li>{{ product }} - Weight: {{ details.weight }}g - Confidence: {{ details.confidence }}</li>
-            {% endfor %}
-        </ul>
+    <h1>Detected Objects</h1>
+    <div class="images">
+        {% for image in images %}
+            <img src="{{ url_for('static', filename=image) }}" alt="Detected Object">
+        {% endfor %}
     </div>
-    <button onclick="detectProduct()">Detect Product</button>
-    <button onclick="proceedToPay()">Proceed to Pay</button>
-    <div id="detection-result"></div>
-    <div id="total-price"></div>
-
-    <script>
-    function detectProduct() {
-        $.post('/detect', function(data) {
-            if(data.error) {
-                alert('Error: ' + data.error);
-            } else {
-                $('#detection-result').html('<p>Detected: ' + data.item + ' - Weight: ' + data.weight + 'g - Confidence: ' + data.confidence + '</p>');
-                $('#products').append('<li>' + data.item + ' - Weight: ' + data.weight + 'g - Confidence: ' + data.confidence + '</li>');
-            }
-        });
-    }
-
-    function proceedToPay() {
-        $.post('/total', function(data) {
-            $('#total-price').html('<p>Total Price: NRS' + data.total.toFixed(2) + '</p>');
-        });
-    }
-    </script>
+    <form action="{{ url_for('control_detection') }}" method="post">
+        <button type="submit" name="action" value="start">Start Detection</button>
+        <button type="submit" name="action" value="stop">Stop Detection</button>
+    </form>
+    <a href="{{ url_for('total') }}">View Total</a>
 </body>
 </html>

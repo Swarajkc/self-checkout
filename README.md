@@ -19,3 +19,27 @@ This project is a Flask-based self-checkout system designed for retail environme
 ## Installation
 
 1. Clone this repository:
+ git clone https://github.com/Swarajkc/self-checkout.git
+2. Navigate to the project directory:
+cd self-checkout-system
+3. Install required Python packages:
+
+## Usage
+
+To start the application, run:
+
+
+Visit `http://localhost:5000` in your web browser to interact with the application.
+
+## Configuration
+
+- Adjust the `app.py` to point to your specific hardware setup, e.g., the serial port for Arduino.
+- Place images in the `static/images` directory to be displayed on the web interface.
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit pull requests to the main branch.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

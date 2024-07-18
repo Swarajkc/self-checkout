@@ -9,11 +9,11 @@
 <body>
     <h1>Total Checkout</h1>
     <ul>
-        {% for item, total in products.items() %}
-            <li>{{ item }}: {{ total }} g</li>
+        {% for item, count in products.items() %}
+            <li>{{ item }}: {{ count }} units</li>
         {% endfor %}
     </ul>
-    <h2>Total Cost: {{ total }} Rs</h2>
+    <h2>Total Cost: ${{ total }}</h2>
     <button onclick="window.location.href='/proceed_to_payment'">Proceed to Pay</button>
 </body>
 </html>

@@ -1,7 +1,10 @@
 function startDetection() {
-    fetch('/start_detection')
-        .then(response => response.json())
-        .then(data => console.log(data));
+    fetch('/control_detection', {
+        method: 'POST',
+        body: new URLSearchParams({ action: 'start' })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data));
 }
 
 function updateDetails() {
@@ -10,7 +13,7 @@ function updateDetails() {
         .then(data => {
             document.getElementById('object').innerText = data.object || "Not detected";
             document.getElementById('weight').innerText = data.weight || "Waiting for data...";
-            document.getElementById('price').innerText = data.price || "0.00 Rs";
+            document.getElementById('price').innerText = data.price ? data.price.toFixed(2) + " Rs" : "0.00 Rs";
         });
 }
 

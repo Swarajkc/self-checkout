@@ -17,15 +17,15 @@ price_per_gram_Lays = 1.21
 price_per_gram_Coke = 5.88
 
 # Global variables
-products = {}  # Track detected products and their counts
+products = {}
 model_path = '/home/pi/modelfile.eim'  # Path to your Edge Impulse model
 detection_active = False
-weight = 0  # Current weight reading
-total_weight = {}  # Accumulate total weight for each product
+weight = 0  # Initialize weight
+item_detected = ''  # Track the last detected item
 
 # Thread for continuous object detection
 def continuous_detection():
-    global detection_active, products, weight, total_weight
+    global detection_active, products, item_detected
     with ImageImpulseRunner(model_path) as runner:
         runner.init()
         picam2 = Picamera2()
@@ -43,14 +43,8 @@ def continuous_detection():
                         confidence = bbox['value']
                         if confidence > 0.4:  # Threshold for detection
                             products[label] = products.get(label, 0) + 1
-                            weight = read_from_arduino()  # Update weight during detection
-
-                            # Update total weight for the detected product
-                            if label in total_weight:
-                                total_weight[label] += weight
-                            else:
-                                total_weight[label] = weight
-                            break  # Only consider the first detected item
+                            item_detected = label  # Update the last detected item
+            read_from_arduino()  # Update weight during detection
 
 def read_from_arduino():
     global weight
@@ -58,7 +52,7 @@ def read_from_arduino():
         weights = []
         start_time = time.time()
         try:
-            while time.time() - start_time < 1:  # Read for a short duration
+            while time.time() - start_time < 10:
                 if ser.in_waiting > 0:
                     data = ser.readline().decode().strip()
                     weight = float(data)  # Read weight from Arduino
@@ -66,7 +60,7 @@ def read_from_arduino():
                         weights.append(weight)
         except (ValueError, serial.SerialException) as e:
             print(f"Error reading from Arduino: {e}")
-        return weights[-1] if weights else 0
+        weight = weights[-1] if weights else 0
 
 @app.route('/')
 def index():
@@ -90,20 +84,19 @@ def control_detection():
 
 @app.route('/get_details', methods=['GET'])
 def get_details():
-    global weight, total_weight
-    total_price = sum(total_weight.get(item, 0) * (price_per_gram_Lays if item == 'Lays' else price_per_gram_Coke) for item in total_weight)
+    global weight, item_detected
+    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke) if item_detected else 0
     return jsonify({
-        'object': products,
+        'object': item_detected,
         'weight': weight,
-        'total_weight': total_weight,
         'price': total_price
     })
 
 @app.route('/total', methods=['GET'])
 def total():
-    global total_weight
-    total_price = sum(total_weight.get(item, 0) * (price_per_gram_Lays if item == 'Lays' else price_per_gram_Coke) for item in total_weight)
-    return render_template('total.html', total=total_price, products=total_weight)
+    global weight, item_detected
+    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke) if item_detected else 0
+    return render_template('total.html', total=total_price, products=products)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)

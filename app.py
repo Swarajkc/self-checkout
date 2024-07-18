@@ -44,15 +44,7 @@ def continuous_detection():
                         if confidence > 0.4:  # Threshold for detection
                             products[label] = products.get(label, 0) + 1
                             item_detected = label  # Update the last detected item
-
-@app.route('/')
-def index():
-    image_folder = 'static/images'
-    images = os.listdir(image_folder)
-    image_paths = [os.path.join(image_folder, img) for img in images]
-    return render_template('index.html', images=image_paths)
-
-serial_lock = threading.Lock()
+            read_from_arduino()  # Update weight during detection
 
 def read_from_arduino():
     global weight
@@ -63,12 +55,21 @@ def read_from_arduino():
             while time.time() - start_time < 10:
                 if ser.in_waiting > 0:
                     data = ser.readline().decode().strip()
-                    weight = float(data)
+                    weight = float(data)  # Read weight from Arduino
                     if weight > 0:
                         weights.append(weight)
         except (ValueError, serial.SerialException) as e:
             print(f"Error reading from Arduino: {e}")
         weight = weights[-1] if weights else 0
+
+@app.route('/')
+def index():
+    image_folder = 'static/images'
+    images = os.listdir(image_folder)
+    image_paths = [os.path.join(image_folder, img) for img in images]
+    return render_template('index.html', images=image_paths)
+
+serial_lock = threading.Lock()
 
 @app.route('/control_detection', methods=['POST'])
 def control_detection():

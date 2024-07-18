@@ -14,7 +14,7 @@ ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust to your Arduino port
 
 # Price definitions
 price_per_gram_Lays = 1.21
-price_per_gram_Coke = 5.88
+price_per_gram_Coke = 0.17
 
 # Global variables
 products = {}

@@ -76,7 +76,7 @@ def control_detection():
 
 @app.route('/total', methods=['GET'])
 def total():
-    total_price = sum(products[item] * 10 for item in products)  # Simplified pricing, adjust as needed
+    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke)  # Simplified pricing, adjust as needed
     return render_template('total.html', total=total_price, products=products)
 
 if __name__ == "__main__":

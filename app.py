@@ -12,14 +12,20 @@ app = Flask(__name__)
 # Setup the serial connection for weight reading
 ser = serial.Serial('/dev/ttyACM0', 57600)  # Adjust to your Arduino port
 
+# Price definitions
+price_per_gram_Lays = 1.21
+price_per_gram_Coke = 5.88
+
 # Global variables
 products = {}
 model_path = '/home/pi/modelfile.eim'  # Path to your Edge Impulse model
 detection_active = False
+weight = 0  # Initialize weight
+item_detected = ''  # Track the last detected item
 
 # Thread for continuous object detection
 def continuous_detection():
-    global detection_active
+    global detection_active, products, item_detected
     with ImageImpulseRunner(model_path) as runner:
         runner.init()
         picam2 = Picamera2()
@@ -37,6 +43,7 @@ def continuous_detection():
                         confidence = bbox['value']
                         if confidence > 0.4:  # Threshold for detection
                             products[label] = products.get(label, 0) + 1
+                            item_detected = label  # Update the last detected item
 
 @app.route('/')
 def index():
@@ -45,10 +52,10 @@ def index():
     image_paths = [os.path.join(image_folder, img) for img in images]
     return render_template('index.html', images=image_paths)
 
-
 serial_lock = threading.Lock()
 
 def read_from_arduino():
+    global weight
     with serial_lock:
         weights = []
         start_time = time.time()
@@ -61,7 +68,7 @@ def read_from_arduino():
                         weights.append(weight)
         except (ValueError, serial.SerialException) as e:
             print(f"Error reading from Arduino: {e}")
-        return weights[-1] if weights else 0
+        weight = weights[-1] if weights else 0
 
 @app.route('/control_detection', methods=['POST'])
 def control_detection():
@@ -74,9 +81,20 @@ def control_detection():
         detection_active = False
     return redirect(url_for('index'))
 
+@app.route('/get_details', methods=['GET'])
+def get_details():
+    global weight, item_detected
+    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke) if item_detected else 0
+    return jsonify({
+        'object': item_detected,
+        'weight': weight,
+        'price': total_price
+    })
+
 @app.route('/total', methods=['GET'])
 def total():
-    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke)  # Simplified pricing, adjust as needed
+    global weight, item_detected
+    total_price = weight * (price_per_gram_Lays if item_detected == 'Lays' else price_per_gram_Coke) if item_detected else 0
     return render_template('total.html', total=total_price, products=products)
 
 if __name__ == "__main__":

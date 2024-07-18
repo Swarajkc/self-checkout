@@ -11,9 +11,10 @@ function updateDetails() {
     fetch('/get_details')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('object').innerText = data.object || "Not detected";
+            document.getElementById('object').innerText = Object.keys(data.object).join(', ') || "Not detected";
             document.getElementById('weight').innerText = data.weight ? data.weight.toFixed(2) + " g" : "Waiting for data...";
-            document.getElementById('price').innerText = data.price ? data.price.toFixed(2) + " Rs" : "0.00 Rs";
+            document.getElementById('total-weight').innerText = Object.values(data.total_weight).reduce((a, b) => a + b, 0).toFixed(2) + " g";
+            document.getElementById('price').innerText = data.price.toFixed(2) + " Rs";
         });
 }
 

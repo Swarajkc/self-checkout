@@ -45,6 +45,24 @@ def index():
     image_paths = [os.path.join(image_folder, img) for img in images]
     return render_template('index.html', images=image_paths)
 
+
+serial_lock = threading.Lock()
+
+def read_from_arduino():
+    with serial_lock:
+        weights = []
+        start_time = time.time()
+        try:
+            while time.time() - start_time < 10:
+                if ser.in_waiting > 0:
+                    data = ser.readline().decode().strip()
+                    weight = float(data)
+                    if weight > 0:
+                        weights.append(weight)
+        except (ValueError, serial.SerialException) as e:
+            print(f"Error reading from Arduino: {e}")
+        return weights[-1] if weights else 0
+
 @app.route('/control_detection', methods=['POST'])
 def control_detection():
     global detection_active

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment QR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('payment_status', function(data) {
+            if (data.status === 'success') {
+                alert(`Payment successful! Amount paid: NPR ${data.amount}`);
+                window.location.href = '/';
+            } else if (data.status === 'failure') {
+                alert('Payment failed!');
+                window.location.href = '/';
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scan QR Code to Pay</h1>
+        </header>
+
+        <section class="qr-code">
+            <img src="{{ url_for('static', filename='mock_qr.png') }}" alt="Payment QR Code">
+        </section>
+
+        <section>
+            <p><strong>Transaction ID:</strong> {{ transaction_id }}</p>
+            <p><strong>Total Amount:</strong> NPR {{ total_price }}</p>
+        </section>
+
+        <footer>
+            <p>&copy; 2025 Self-Checkout System. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

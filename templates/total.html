@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Checkout</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header>
+            <h1>Total Checkout</h1>
+        </header>
+
+        <!-- Products List Section -->
+        <section id="products-list-section">
+            <h2>Purchased Items</h2>
+            <ul class="products-list">
+                {% for item, count in products.items() %}
+                    <li><strong>{{ item }}</strong>: {{ count }} units</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Total Cost Section -->
+        <section id="total-cost-section">
+            <h2>Total Cost: <span class="total-cost">NRS {{ total }}</span></h2>
+        </section>
+
+        <!-- Proceed to Payment Button -->
+        <div id="proceed-button-container">
+            <a href="/generate_payment_qr" class="proceed-button">Proceed to Pay</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Self-Checkout System. All rights reserved.</p>
+    </footer>
+</body>
+</html>

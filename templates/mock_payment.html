@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Payment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="mock-payment-container">
+        <header>
+            <h1>Mock Payment</h1>
+        </header>
+        <section>
+            <p><strong>Transaction ID:</strong> {{ transaction_id }}</p>
+            <p><strong>Amount:</strong> NPR {{ amount }}</p>
+            <p>Choose a payment outcome:</p>
+            <form action="{{ url_for('mock_payment') }}" method="POST">
+                <input type="hidden" name="transaction_id" value="{{ transaction_id }}">
+                <input type="hidden" name="amount" value="{{ amount }}">
+                <button type="submit" name="action" value="success" class="button success">Simulate Success</button>
+                <button type="submit" name="action" value="failure" class="button failure">Simulate Failure</button>
+            </form>
+        </section>
+    </div>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Checkout System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ time_stamp }}">
+    <script src="{{ url_for('static', filename='js/scripts.js') }}?v={{ time_stamp }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>Self-Checkout System</h1>
+        </header>
+
+        <!-- Available Stock Section -->
+        <section id="stock-section">
+            <h2>Available Stock</h2>
+            <ul id="stock-list">
+                {% for stock in stocks %}
+                    <li><strong>{{ stock.item_name }}</strong>: {{ stock.quantity }} units</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Detected Objects Section -->
+        <section id="detection-section">
+            <h2>Detected Objects</h2>
+            <div class="images">
+                {% if detected_image %}
+                    <img src="{{ url_for('static', filename=detected_image) }}?v={{ time_stamp }}" alt="Detected Object">
+                {% else %}
+                    <p>No objects detected. Place items for detection.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Control Buttons -->
+        <section id="control-buttons">
+            <form action="{{ url_for('control_detection') }}" method="post">
+                <button type="submit" name="action" value="start">Start Detection</button>
+                <button type="submit" name="action" value="stop">Stop Detection</button>
+            </form>
+        </section>
+
+        <!-- Details Section -->
+        <section id="details-section">
+            <h2>Details</h2>
+            <p><strong>Object Detected:</strong> <span id="object">{{ item_detected or 'Not detected' }}</span></p>
+            <p><strong>Weight:</strong> <span id="weight">Waiting for data...</span></p>
+            <p><strong>Price:</strong> <span id="price">0.00 Rs</span></p>
+        </section>
+
+        <!-- View Total Link -->
+        <div id="view-total">
+            <a href="{{ url_for('total') }}" class="view-total-link">View Total</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Self-Checkout System. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Function to fetch updated stock data via AJAX
+        function fetchUpdatedStock() {
+            fetch('/get_stock') // Flask endpoint for stock data
+                .then(response => response.json())
+                .then(data => {
+                    const stockList = document.getElementById('stock-list');
+                    stockList.innerHTML = ''; // Clear current stock list
+
+                    if (data.length > 0) {
+                        data.forEach(stock => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `<strong>${stock.item_name}</strong>: ${stock.quantity} units`;
+                            stockList.appendChild(listItem);
+                        });
+                    } else {
+                        stockList.innerHTML = '<p>No stock available.</p>';
+                    }
+                })
+                .catch(error => console.error('Error fetching stock data:', error));
+        }
+
+        // Periodically fetch updated stock data every 5 seconds
+        setInterval(fetchUpdatedStock, 5000);
+    </script>
+</body>
+</html>

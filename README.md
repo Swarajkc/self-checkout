@@ -1,4 +1,3 @@
-````markdown
 # 🛒 Self-Checkout System
 
 This project is a Raspberry Pi-powered self-checkout system built to replace traditional cashiers in retail environments. It integrates real-time object detection, weight-based pricing, and a mock payment system — all managed via a locally hosted Flask web interface.
@@ -33,7 +32,6 @@ This project is a Raspberry Pi-powered self-checkout system built to replace tra
    ```bash
    git clone https://github.com/Swarajkc/self-checkout.git
    cd self-checkout
-````
 
 2. **Install Python Dependencies**
 
@@ -107,4 +105,3 @@ Pull requests and feature ideas are welcome! Fork the repo and submit your chang
 ## 📄 License
 
 This project is licensed under the **MIT License**.
-````

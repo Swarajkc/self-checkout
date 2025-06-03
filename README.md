@@ -53,7 +53,7 @@ This project is a Raspberry Pi-powered self-checkout system built to replace tra
 
 ---
 
-## 🚀 Usage
+## Usage
 
 1. **Start the Flask App**
 
